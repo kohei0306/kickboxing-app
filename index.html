@@ -9,6 +9,7 @@
     body {
       font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
       background: #1a1a2e; color: #eee; min-height: 100vh;
+      font-size: 15px;
     }
 
     /* ===== ヘッダー ===== */
@@ -22,8 +23,8 @@
       position:relative; display:flex; align-items:center;
       justify-content:center; min-height:44px;
     }
-    header h1 { font-size: 1.0rem; font-weight: bold; letter-spacing: 1px; text-align:center; }
-    header p  { font-size: 0.7rem; opacity: 0.85; margin-top: 2px; text-align:center; }
+    header h1 { font-size: 1.1rem; font-weight: bold; letter-spacing: 1px; text-align:center; }
+    header p  { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; text-align:center; }
     .host-area {
       position:absolute; right:0; top:50%; transform:translateY(-50%);
       display:flex; flex-direction:column; align-items:center; gap:2px;
@@ -89,8 +90,8 @@
       position: sticky; top: 58px; z-index: 99;
     }
     .tab-btn {
-      flex: 1; padding: 11px 4px; background: none; border: none;
-      color: #888; font-size: 0.72rem; cursor: pointer;
+      flex: 1; padding: 14px 4px; background: none; border: none;
+      color: #888; font-size: 0.88rem; cursor: pointer;
       transition: all 0.2s; font-weight: bold; line-height: 1.3; text-align: center;
     }
     .tab-btn.active {
@@ -110,8 +111,8 @@
 
     /* ===== メンバーカード ===== */
     .member-card {
-      background: #16213e; border-radius: 14px;
-      padding: 16px; margin-bottom: 14px;
+      background: #16213e; border-radius: 16px;
+      padding: 20px; margin-bottom: 18px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #2a3a5e;
       transition: border-color 0.3s;
     }
@@ -123,10 +124,10 @@
       justify-content: space-between; margin-bottom: 12px;
     }
     .member-name {
-      font-size: 1.05rem; font-weight: bold;
+      font-size: 1.25rem; font-weight: bold;
       display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
-    .member-name::before { content: '🥊'; font-size: 1rem; }
+    .member-name::before { content: '🥊'; font-size: 1.1rem; }
     .round-label {
       font-size: 0.68rem; color: #7ab;
       background: rgba(122,170,187,0.15); border: 1px solid #3a5070;
@@ -142,17 +143,19 @@
     /* ===== チケット枠 ===== */
     .tickets { display:flex; gap:7px; margin-bottom:10px; flex-wrap:wrap; }
     .ticket {
-      flex:1; min-width:50px; background:#0f3460;
+      flex:1; min-width:54px; background:#0f3460;
       border:2px dashed #3a5070; border-radius:10px;
-      padding:7px 3px; text-align:center; font-size:0.6rem;
-      color:#778; min-height:56px; display:flex;
+      padding:8px 3px; text-align:center; font-size:0.72rem;
+      color:#778; min-height:72px; display:flex;
       flex-direction:column; align-items:center; justify-content:center; line-height:1.3;
     }
     .ticket.used {
       background:linear-gradient(135deg,#e94560,#c0392b);
-      border:2px solid #e94560; color:#fff; font-size:0.58rem; font-weight:bold;
+      border:2px solid #e94560; color:#fff; font-weight:bold;
     }
-    .ticket.used::before { content:'✅'; font-size:0.95rem; display:block; margin-bottom:2px; }
+    .ticket-check  { font-size:1.1rem; line-height:1; }
+    .ticket-date-md { font-size:0.95rem; font-weight:bold; line-height:1.2; }
+    .ticket-date-y  { font-size:0.62rem; opacity:0.75; line-height:1; }
     .no-ticket-msg {
       background:#0f3460; border:1px dashed #3a5070; border-radius:10px;
       padding:10px 12px; margin-bottom:10px;
@@ -187,8 +190,8 @@
       display:flex; align-items:center;
       justify-content:space-between; gap:8px; flex-wrap:wrap;
     }
-    .remaining { font-size:0.82rem; color:#aaa; }
-    .remaining span { font-size:1.2rem; font-weight:bold; color:#e94560; }
+    .remaining { font-size:1.0rem; color:#aaa; }
+    .remaining span { font-size:1.7rem; font-weight:bold; color:#e94560; }
 
     /* ===== 5回完了エリア ===== */
     .completion-area {
@@ -202,10 +205,10 @@
     /* ===== ボタン ===== */
     .btn-attend {
       background:linear-gradient(135deg,#e94560,#c0392b);
-      color:#fff; border:none; padding:10px 18px; border-radius:25px;
-      font-size:0.88rem; font-weight:bold; cursor:pointer;
+      color:#fff; border:none; padding:16px 28px; border-radius:30px;
+      font-size:1.15rem; font-weight:bold; cursor:pointer;
       transition:transform 0.15s,opacity 0.15s;
-      box-shadow:0 3px 10px rgba(233,69,96,0.4); white-space:nowrap;
+      box-shadow:0 4px 14px rgba(233,69,96,0.5); white-space:nowrap;
     }
     .btn-attend:hover { transform:scale(1.04); opacity:0.92; }
     .btn-undo {
@@ -359,11 +362,11 @@
     .archive-chip strong { color:#e94560; }
     .archive-chip.date-chip strong { color:#f39c12; }
     .btn-delete-member {
-      background:rgba(233,69,96,0.15); border:1px solid rgba(233,69,96,0.4);
-      color:#e94560; padding:5px 10px; border-radius:8px;
-      font-size:0.72rem; cursor:pointer; white-space:nowrap;
+      background:none; border:1px solid #333;
+      color:#555; padding:3px 7px; border-radius:6px;
+      font-size:0.65rem; cursor:pointer; white-space:nowrap;
     }
-    .btn-delete-member:hover { background:rgba(233,69,96,0.3); }
+    .btn-delete-member:hover { border-color:#e94560; color:#e94560; }
 
     /* ===== 個人履歴ページ ===== */
     .history-member-selector {
@@ -796,10 +799,19 @@
       // チケット表示
       let ticketSection = '';
       if (m.hasTicket5) {
-        const chips = m.tickets.map((t, i) => t
-          ? `<div class="ticket used">${t.replace(/\//g,'<br>')}</div>`
-          : `<div class="ticket">チケット<br>${i+1}</div>`
-        ).join('');
+        const chips = m.tickets.map((t, i) => {
+          if (t) {
+            const parts = t.split('/'); // ['2026','03','31']
+            const md = `${parseInt(parts[1])}/${parseInt(parts[2])}`; // '3/31'
+            const y  = parts[0]; // '2026'
+            return `<div class="ticket used">
+              <span class="ticket-check">✅</span>
+              <span class="ticket-date-md">${md}</span>
+              <span class="ticket-date-y">${y}</span>
+            </div>`;
+          }
+          return `<div class="ticket">チケット<br>${i+1}</div>`;
+        }).join('');
         ticketSection = `<div class="tickets">${chips}</div>`;
       } else {
         ticketSection = `<div class="no-ticket-msg">5回券未購入 ― 「5回券購入」タブで購入してください</div>`;
@@ -1071,6 +1083,7 @@
     const m = members.find(x => x.id === id);
     if (!m) return;
     if (!confirm(`「${m.name}」さんを完全に削除しますか？\nこの操作は取り消せません。`)) return;
+    if (!confirm(`最終確認：「${m.name}」さんのデータを完全に削除します。\n本当によろしいですか？`)) return;
     saveMembers(members.filter(x => x.id !== id));
     savePurchases(loadPurchases().filter(p => p.memberId !== id && p.name !== m.name));
     saveArchive(loadArchive().filter(a => a.memberId !== id && a.name !== m.name));

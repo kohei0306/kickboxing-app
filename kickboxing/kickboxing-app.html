@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>キック参加アプリ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      background: #1a1a2e; color: #eee; min-height: 100vh;
+      font-size: 15px;
+    }
+
+    /* ===== ヘッダー ===== */
+    header {
+      background: linear-gradient(135deg, #e94560, #c0392b);
+      padding: 12px 16px; text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .header-inner {
+      position:relative; display:flex; align-items:center;
+      justify-content:center; min-height:44px;
+    }
+    header h1 { font-size: 1.1rem; font-weight: bold; letter-spacing: 1px; text-align:center; }
+    header p  { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; text-align:center; }
+    .host-area {
+      position:absolute; right:0; top:50%; transform:translateY(-50%);
+      display:flex; flex-direction:column; align-items:center; gap:2px;
+    }
+    .btn-host {
+      background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.5);
+      color:#fff; padding:7px 10px; border-radius:12px;
+      font-size:0.72rem; font-weight:bold; cursor:pointer;
+      transition:background 0.2s; white-space:nowrap;
+      line-height:1.35; text-align:center;
+    }
+    .btn-host:hover  { background:rgba(255,255,255,0.28); }
+    .btn-host:active { background:rgba(255,255,255,0.38); }
+    .btn-host-edit {
+      background:none; border:none; color:rgba(255,255,255,0.65);
+      font-size:0.62rem; cursor:pointer; padding:1px 4px;
+    }
+    .btn-host-edit:hover { color:#fff; }
+    .host-edit-input {
+      width:60px; background:rgba(255,255,255,0.18); border:1px solid rgba(255,255,255,0.65);
+      color:#fff; padding:5px 8px; border-radius:8px; font-size:0.9rem;
+      text-align:center; -moz-appearance:textfield;
+    }
+    .host-edit-input:focus { outline:none; border-color:#fff; background:rgba(255,255,255,0.28); }
+    .host-edit-input::-webkit-inner-spin-button,
+    .host-edit-input::-webkit-outer-spin-button { -webkit-appearance:none; }
+    .btn-host-save {
+      background:rgba(255,255,255,0.28); border:1px solid rgba(255,255,255,0.65);
+      color:#fff; padding:4px 9px; border-radius:6px;
+      font-size:0.68rem; font-weight:bold; cursor:pointer;
+    }
+    .btn-host-cancel {
+      background:none; border:1px solid rgba(255,255,255,0.35);
+      color:rgba(255,255,255,0.7); padding:4px 8px;
+      border-radius:6px; font-size:0.68rem; cursor:pointer;
+    }
+    @media (max-width: 600px) {
+      .header-inner {
+        flex-direction: column; align-items: stretch; gap: 4px;
+      }
+      .header-inner > div:first-child { text-align: center; }
+      .host-area {
+        position: static; transform: none; align-self: flex-end;
+      }
+    }
+
+    /* ===== GAS同期バー ===== */
+    #sync-bar {
+      display:none; padding:7px 16px; text-align:center;
+      font-size:0.78rem; font-weight:bold; letter-spacing:0.5px;
+      position:sticky; top:58px; z-index:97;
+      transition:opacity 0.3s;
+    }
+    #sync-bar.show    { display:block; }
+    #sync-bar.loading { background:#0d2440; color:#7ec8e3; }
+    #sync-bar.success { background:#0d2e0d; color:#7ecb7e; }
+    #sync-bar.error   { background:#2e0d0d; color:#e38080; }
+
+    /* ===== タブナビ ===== */
+    .tab-nav {
+      display: flex; background: #16213e;
+      border-bottom: 2px solid #e94560;
+      position: sticky; top: 58px; z-index: 99;
+    }
+    .tab-btn {
+      flex: 1; padding: 14px 4px; background: none; border: none;
+      color: #888; font-size: 0.88rem; cursor: pointer;
+      transition: all 0.2s; font-weight: bold; line-height: 1.3; text-align: center;
+    }
+    .tab-btn.active {
+      color: #e94560; border-bottom: 3px solid #e94560;
+      margin-bottom: -2px; background: #1a1a2e;
+    }
+    .tab-btn:hover:not(.active) { color: #ddd; background: #1f2f50; }
+    .tab-badge {
+      display: inline-block; background: #e94560; color: #fff;
+      font-size: 0.6rem; padding: 1px 5px; border-radius: 10px;
+      margin-left: 2px; vertical-align: middle;
+    }
+
+    /* ===== ページ ===== */
+    .page { display: none; padding: 16px; }
+    .page.active { display: block; }
+
+    /* ===== メンバーカード ===== */
+    .member-card {
+      background: #16213e; border-radius: 16px;
+      padding: 20px; margin-bottom: 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: 1px solid #2a3a5e;
+      transition: border-color 0.3s;
+    }
+    .member-card.completing {
+      border-color: #f39c12; box-shadow: 0 0 16px rgba(243,156,18,0.3);
+    }
+    .member-header {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 12px;
+    }
+    .member-name {
+      font-size: 1.25rem; font-weight: bold;
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    }
+    .member-name::before { content: '🥊'; font-size: 1.1rem; }
+    .round-label {
+      font-size: 0.68rem; color: #7ab;
+      background: rgba(122,170,187,0.15); border: 1px solid #3a5070;
+      padding: 2px 7px; border-radius: 10px; font-weight: normal;
+      white-space: nowrap;
+    }
+    .badge-ok       { background:#27ae60; color:#fff; font-size:0.7rem; padding:3px 9px; border-radius:20px; font-weight:bold; }
+    .badge-warn     { background:#e94560; color:#fff; font-size:0.7rem; padding:3px 9px; border-radius:20px; font-weight:bold; animation:pulse 1.2s infinite; }
+    .badge-done     { background:linear-gradient(135deg,#f39c12,#e67e22); color:#fff; font-size:0.7rem; padding:3px 9px; border-radius:20px; font-weight:bold; }
+    .badge-noticket { background:#444; color:#888; font-size:0.7rem; padding:3px 9px; border-radius:20px; font-weight:bold; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+    /* ===== チケット枠 ===== */
+    .tickets { display:flex; gap:7px; margin-bottom:10px; flex-wrap:wrap; }
+    .ticket {
+      flex:1; min-width:54px; background:#0f3460;
+      border:2px dashed #3a5070; border-radius:10px;
+      padding:8px 3px; text-align:center; font-size:0.72rem;
+      color:#778; min-height:72px; display:flex;
+      flex-direction:column; align-items:center; justify-content:center; line-height:1.3;
+    }
+    .ticket.used {
+      background:linear-gradient(135deg,#e94560,#c0392b);
+      border:2px solid #e94560; color:#fff; font-weight:bold;
+    }
+    .ticket-check  { font-size:1.1rem; line-height:1; }
+    .ticket-date-md { font-size:0.95rem; font-weight:bold; line-height:1.2; }
+    .ticket-date-y  { font-size:0.62rem; opacity:0.75; line-height:1; }
+    .no-ticket-msg {
+      background:#0f3460; border:1px dashed #3a5070; border-radius:10px;
+      padding:10px 12px; margin-bottom:10px;
+      font-size:0.8rem; color:#556; text-align:center;
+    }
+
+    /* ===== 事前購入エリア ===== */
+    .prepurchase-area {
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(52,152,219,0.1); border: 1px solid #2980b9;
+      border-radius: 10px; padding: 10px 12px;
+    }
+    .prepurchase-area .pp-msg { font-size:0.8rem; color:#5dade2; flex:1; }
+    .btn-prepurchase {
+      background: linear-gradient(135deg,#2980b9,#1a5276);
+      color:#fff; border:none; padding:8px 14px; border-radius:20px;
+      font-size:0.78rem; font-weight:bold; cursor:pointer;
+      white-space:nowrap; box-shadow:0 2px 8px rgba(41,128,185,0.4);
+      transition: opacity 0.2s;
+    }
+    .btn-prepurchase:hover { opacity:0.88; }
+    .reserved-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(52,152,219,0.15); border: 1px solid #2980b9;
+      color: #5dade2; font-size:0.75rem; font-weight:bold;
+      padding: 5px 12px; border-radius: 20px; margin-bottom: 10px;
+    }
+
+    /* ===== カードフッター ===== */
+    .card-footer {
+      display:flex; align-items:center;
+      justify-content:space-between; gap:8px; flex-wrap:wrap;
+    }
+    .remaining { font-size:1.0rem; color:#aaa; }
+    .remaining span { font-size:1.7rem; font-weight:bold; color:#e94560; }
+
+    /* ===== 5回完了エリア ===== */
+    .completion-area {
+      width:100%; margin-top:12px;
+      background:rgba(243,156,18,0.1); border:1px solid #f39c12;
+      border-radius:10px; padding:12px 14px;
+    }
+    .completion-msg { font-size:0.9rem; color:#f39c12; font-weight:bold; margin-bottom:10px; }
+    .completion-btns { display:flex; gap:8px; }
+
+    /* ===== ボタン ===== */
+    .btn-attend {
+      background:linear-gradient(135deg,#e94560,#c0392b);
+      color:#fff; border:none; padding:16px 28px; border-radius:30px;
+      font-size:1.15rem; font-weight:bold; cursor:pointer;
+      transition:transform 0.15s,opacity 0.15s;
+      box-shadow:0 4px 14px rgba(233,69,96,0.5); white-space:nowrap;
+    }
+    .btn-attend:hover { transform:scale(1.04); opacity:0.92; }
+    .btn-undo {
+      background:none; border:1px solid #556; color:#889;
+      padding:6px 12px; border-radius:20px;
+      font-size:0.76rem; cursor:pointer; transition:all 0.2s; white-space:nowrap;
+    }
+    .btn-undo:hover { border-color:#e94560; color:#e94560; }
+    .btn-move-archive {
+      flex:1; background:linear-gradient(135deg,#f39c12,#e67e22);
+      color:#fff; border:none; padding:10px 14px; border-radius:25px;
+      font-size:0.88rem; font-weight:bold; cursor:pointer;
+      box-shadow:0 3px 10px rgba(243,156,18,0.4); white-space:nowrap; text-align:center;
+    }
+    .btn-move-archive:hover { opacity:0.9; }
+    .btn-undo-complete {
+      background:none; border:1px solid #556; color:#889;
+      padding:10px 14px; border-radius:25px;
+      font-size:0.82rem; cursor:pointer; transition:all 0.2s; white-space:nowrap;
+    }
+    .btn-undo-complete:hover { border-color:#e94560; color:#e94560; }
+    .btn-history {
+      background:none; border:1px solid #3a5070; color:#7ab;
+      padding:5px 11px; border-radius:16px;
+      font-size:0.74rem; cursor:pointer; transition:all 0.2s;
+    }
+    .btn-history:hover { border-color:#7ab; background:rgba(122,170,187,0.1); }
+
+    /* ===== メンバー追加フォーム ===== */
+    .add-member-area {
+      background:#16213e; border-radius:14px;
+      padding:14px; margin-bottom:14px; border:1px dashed #3a5070;
+    }
+    .add-member-area h3 { font-size:0.9rem; margin-bottom:10px; color:#aaa; }
+    .input-row { display:flex; gap:8px; }
+    input[type="text"], input[type="date"] {
+      flex:1; background:#0f3460; border:1px solid #3a5070;
+      color:#eee; padding:10px 12px; border-radius:8px; font-size:0.9rem;
+    }
+    input::placeholder { color:#556; }
+    input:focus { outline:none; border-color:#e94560; }
+    select {
+      width:100%; background:#0f3460; border:1px solid #3a5070;
+      color:#eee; padding:10px 12px; border-radius:8px; font-size:0.9rem;
+      appearance:none;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M0 0l6 8 6-8z' fill='%23aaa'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 12px center;
+    }
+    select:focus { outline:none; border-color:#e94560; }
+    select option { background:#0f3460; }
+    .btn-add {
+      background:#e94560; color:#fff; border:none;
+      padding:10px 14px; border-radius:8px;
+      font-size:0.88rem; font-weight:bold; cursor:pointer; white-space:nowrap;
+    }
+    .btn-add:hover { opacity:0.88; }
+
+    /* ===== 購入フォーム ===== */
+    .purchase-form {
+      background:#16213e; border-radius:14px;
+      padding:16px; margin-bottom:16px; border:1px solid #2a3a5e;
+    }
+    .purchase-form h3 { font-size:1rem; margin-bottom:14px; color:#e94560; }
+    .form-group { margin-bottom:14px; }
+    .form-group label { display:block; font-size:0.8rem; color:#aaa; margin-bottom:6px; }
+    .form-group input, .form-group select { width:100%; }
+    .toggle-group { display:flex; gap:8px; }
+    .toggle-btn {
+      flex:1; padding:11px 8px; border-radius:10px;
+      font-size:0.85rem; font-weight:bold; cursor:pointer;
+      transition:all 0.2s; text-align:center;
+      border:2px solid #3a5070; background:#0f3460; color:#888;
+    }
+    .toggle-btn.active {
+      background:linear-gradient(135deg,#e94560,#c0392b);
+      border-color:#e94560; color:#fff;
+    }
+    .price-display {
+      background:#0f3460; border:1px solid #3a5070;
+      color:#e94560; padding:12px 14px; border-radius:8px;
+      font-size:1.3rem; font-weight:bold; letter-spacing:1px;
+    }
+    .btn-purchase {
+      width:100%; background:linear-gradient(135deg,#f39c12,#e67e22);
+      color:#fff; border:none; padding:14px; border-radius:10px;
+      font-size:1rem; font-weight:bold; cursor:pointer; margin-top:4px;
+      box-shadow:0 3px 10px rgba(243,156,18,0.4);
+    }
+    .btn-purchase:hover { opacity:0.9; }
+
+    /* ===== 購入履歴リスト ===== */
+    .history-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .history-header h3 { font-size:0.95rem; color:#aaa; }
+    .history-count { background:#e94560; color:#fff; font-size:0.75rem; padding:2px 10px; border-radius:20px; }
+    .history-item {
+      background:#16213e; border-radius:10px;
+      padding:12px 14px; margin-bottom:8px; border:1px solid #2a3a5e;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .history-item .hi-name { font-weight:bold; font-size:0.95rem; }
+    .history-item .hi-date { font-size:0.75rem; color:#778; margin-top:2px; }
+    .history-item .hi-price { color:#f39c12; font-weight:bold; font-size:1rem; }
+    .btn-del {
+      background:none; border:1px solid #556; color:#889;
+      padding:4px 10px; border-radius:16px; font-size:0.75rem;
+      cursor:pointer; margin-left:8px;
+    }
+    .btn-del:hover { border-color:#e94560; color:#e94560; }
+    .btn-member-del {
+      background:none; border:1px solid #556; color:#889;
+      padding:5px 11px; border-radius:16px;
+      font-size:0.74rem; cursor:pointer; transition:all 0.2s;
+    }
+    .btn-member-del:hover { border-color:#e94560; color:#e94560; background:rgba(233,69,96,0.08); }
+    .btn-cancel-prepurchase {
+      background:none; border:1px solid #556; color:#889;
+      padding:4px 10px; border-radius:16px; font-size:0.74rem;
+      cursor:pointer; transition:all 0.2s; white-space:nowrap;
+    }
+    .btn-cancel-prepurchase:hover { border-color:#e94560; color:#e94560; }
+
+    /* ===== 購入状態バッジ ===== */
+    .state-badge { font-size:0.72rem; font-weight:bold; padding:3px 9px; border-radius:12px; white-space:nowrap; }
+    .state-active   { background:rgba(39,174,96,0.2);   color:#2ecc71; border:1px solid #27ae60; }
+    .state-reserved { background:rgba(41,128,185,0.2);  color:#5dade2; border:1px solid #2980b9; }
+    .state-used     { background:rgba(120,120,120,0.15); color:#888;    border:1px solid #556; }
+
+    /* ===== 完了者一覧 ===== */
+    .archive-card {
+      background:#16213e; border-radius:14px;
+      padding:16px; margin-bottom:14px;
+      border:1px solid #f39c12;
+      box-shadow:0 4px 12px rgba(243,156,18,0.15);
+    }
+    .archive-row {
+      display:flex; justify-content:space-between;
+      align-items:center; flex-wrap:wrap; gap:6px;
+    }
+    .archive-name {
+      font-size:1.05rem; font-weight:bold;
+      display:flex; align-items:center; gap:6px;
+    }
+    .archive-name::before { content:'🏆'; }
+    .archive-meta {
+      display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;
+    }
+    .archive-chip {
+      background:#0f3460; border:1px solid #2a3a5e;
+      border-radius:8px; padding:5px 12px; font-size:0.78rem; color:#aaa;
+    }
+    .archive-chip strong { color:#e94560; }
+    .archive-chip.date-chip strong { color:#f39c12; }
+    .btn-delete-member {
+      background:none; border:1px solid #333;
+      color:#555; padding:3px 7px; border-radius:6px;
+      font-size:0.65rem; cursor:pointer; white-space:nowrap;
+    }
+    .btn-delete-member:hover { border-color:#e94560; color:#e94560; }
+
+    /* ===== 個人履歴ページ ===== */
+    .history-member-selector {
+      background:#16213e; border-radius:12px;
+      padding:14px; margin-bottom:14px; border:1px solid #2a3a5e;
+    }
+    .history-member-selector h3 { font-size:0.9rem; color:#aaa; margin-bottom:10px; }
+    .member-select-btns { display:flex; flex-wrap:wrap; gap:8px; }
+    .btn-member-select {
+      background:#0f3460; border:1px solid #3a5070;
+      color:#ccc; padding:8px 14px; border-radius:20px;
+      font-size:0.82rem; cursor:pointer; transition:all 0.2s;
+    }
+    .btn-member-select.active,
+    .btn-member-select:hover { background:#e94560; border-color:#e94560; color:#fff; }
+    .btn-member-select.completed-member { border-color:#f39c12; color:#f39c12; }
+    .btn-member-select.completed-member:hover,
+    .btn-member-select.completed-member.active { background:#f39c12; border-color:#f39c12; color:#fff; }
+    .history-detail {
+      background:#16213e; border-radius:14px;
+      padding:16px; border:1px solid #2a3a5e;
+    }
+    .history-detail-header {
+      display:flex; justify-content:space-between; align-items:center;
+      margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid #2a3a5e;
+    }
+    .history-detail-name { font-size:1.1rem; font-weight:bold; }
+    .status-chip-completed {
+      font-size:0.7rem; color:#f39c12; background:rgba(243,156,18,0.12);
+      border:1px solid #f39c12; padding:2px 8px; border-radius:10px; margin-left:6px;
+    }
+    .history-total-badge {
+      background:linear-gradient(135deg,#e94560,#c0392b);
+      color:#fff; font-size:0.82rem; font-weight:bold;
+      padding:4px 12px; border-radius:20px; white-space:nowrap;
+    }
+    .history-date-item {
+      display:flex; align-items:center; gap:10px;
+      padding:9px 0; border-bottom:1px solid #1e2e4a;
+    }
+    .history-date-item:last-child { border-bottom:none; }
+    .hdi-round { color:#e94560; font-size:0.8rem; font-weight:bold; min-width:52px; white-space:nowrap; }
+    .hdi-sep   { color:#3a5070; font-size:0.8rem; }
+    .hdi-date  { color:#ccc; font-size:0.88rem; }
+
+    .empty-msg { text-align:center; color:#556; padding:30px; font-size:0.9rem; }
+
+    /* ===== お気に入り ===== */
+    .history-group-label {
+      width:100%; font-size:0.75rem; color:#778; letter-spacing:0.5px;
+      margin:10px 0 6px; padding-bottom:5px; border-bottom:1px solid #2a3a5e;
+    }
+    .member-btn-row { display:flex; align-items:center; gap:4px; width:100%; }
+    .member-btn-row .btn-member-select { flex:1; text-align:left; }
+    .btn-star {
+      background:none; border:none; font-size:1.15rem;
+      cursor:pointer; padding:4px 5px; line-height:1;
+      transition:transform 0.15s; flex-shrink:0;
+    }
+    .btn-star:hover:not(.fav-auto) { transform:scale(1.25); }
+    .btn-star.fav-on   { color:#f39c12; }
+    .btn-star.fav-off  { color:#3a5070; }
+    .btn-star.fav-auto { color:#f39c12; cursor:default; opacity:0.55; }
+
+    /* ===== 名前編集 ===== */
+    .btn-edit {
+      background:none; border:1px solid #3a5070; color:#7ab;
+      padding:3px 8px; border-radius:12px; font-size:0.7rem;
+      cursor:pointer; transition:all 0.2s; white-space:nowrap; flex-shrink:0;
+    }
+    .btn-edit:hover { border-color:#7ab; background:rgba(122,170,187,0.1); }
+    .member-edit-row { display:flex; align-items:center; gap:6px; width:100%; padding:4px 0; }
+    .edit-name-input {
+      flex:1; background:#0f3460; border:1px solid #e94560;
+      color:#eee; padding:7px 10px; border-radius:8px; font-size:0.85rem; min-width:0;
+    }
+    .edit-name-input:focus { outline:none; }
+    .btn-edit-save {
+      background:#27ae60; color:#fff; border:none;
+      padding:7px 12px; border-radius:8px; font-size:0.78rem;
+      cursor:pointer; white-space:nowrap; flex-shrink:0;
+    }
+    .btn-edit-cancel {
+      background:none; border:1px solid #556; color:#889;
+      padding:7px 10px; border-radius:8px; font-size:0.78rem;
+      cursor:pointer; white-space:nowrap; flex-shrink:0;
+    }
+
+    /* ===== メンバー統計テキスト ===== */
+    .member-stats { font-size:0.65rem; color:#778; font-weight:normal; }
+    .member-btn-col { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+    .member-btn-col .btn-member-select { width:100%; }
+    .member-btn-row { display:flex; align-items:flex-start; gap:4px; width:100%; }
+    .member-stats-row { display:flex; align-items:center; gap:3px; padding-left:2px; flex-wrap:wrap; }
+    .btn-edit-count {
+      background:none; border:none; font-size:0.72rem; cursor:pointer;
+      padding:1px 2px; opacity:0.55; transition:opacity 0.2s; line-height:1;
+    }
+    .btn-edit-count:hover { opacity:1; }
+    .legacy-edit-row { display:flex; align-items:center; gap:5px; flex-wrap:wrap; padding-left:2px; margin-top:1px; }
+    .legacy-edit-input {
+      width:62px; background:#0f3460; border:1px solid #e94560;
+      color:#eee; padding:4px 8px; border-radius:6px; font-size:0.82rem;
+      -moz-appearance:textfield;
+    }
+    .legacy-edit-input::-webkit-inner-spin-button,
+    .legacy-edit-input::-webkit-outer-spin-button { -webkit-appearance:none; }
+    .legacy-edit-input:focus { outline:none; }
+
+    /* ===== 移行データ表示 ===== */
+    .legacy-record {
+      margin-top:10px; padding:8px 14px;
+      background:rgba(122,170,187,0.07); border:1px solid #2a3a5e;
+      border-radius:8px; font-size:0.8rem; color:#7ab; text-align:center;
+    }
+
+    /* ===== トースト ===== */
+    #toast {
+      position:fixed; bottom:24px; left:50%;
+      transform:translateX(-50%) translateY(80px);
+      background:#27ae60; color:#fff;
+      padding:12px 22px; border-radius:25px;
+      font-size:0.88rem; font-weight:bold;
+      box-shadow:0 4px 14px rgba(0,0,0,0.4);
+      transition:transform 0.3s ease;
+      z-index:999; white-space:nowrap; max-width:92vw; text-align:center;
+    }
+    #toast.show { transform:translateX(-50%) translateY(0); }
+    #toast.error { background:#e94560; }
+    #toast.gold  { background:linear-gradient(135deg,#f39c12,#e67e22); }
+    #toast.blue  { background:linear-gradient(135deg,#2980b9,#1a5276); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <h1>🥊 キック参加アプリ</h1>
+      <p>参加管理アプリ</p>
+    </div>
+    <div class="host-area">
+      <div id="host-normal-area">
+        <button id="btn-host-attend" class="btn-host" onclick="recordHostAttend()">開催<br>〇回目</button>
+        <button class="btn-host-edit" onclick="startHostEdit()">✏️ 編集</button>
+      </div>
+      <div id="host-edit-area" style="display:none;flex-direction:column;align-items:center;gap:4px;">
+        <input type="number" id="host-edit-input" class="host-edit-input" min="1"
+          onkeydown="if(event.key==='Enter')saveHostCount();if(event.key==='Escape')cancelHostEdit();" />
+        <div style="display:flex;gap:4px;">
+          <button class="btn-host-save" onclick="saveHostCount()">保存</button>
+          <button class="btn-host-cancel" onclick="cancelHostEdit()">キャンセル</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+<div id="sync-bar"></div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('attend',  this)">📋<br>参加記録</button>
+  <button class="tab-btn"        onclick="switchTab('purchase', this)">🎫<br>5回券購入</button>
+  <button class="tab-btn"        onclick="switchTab('archive',  this)" id="tab-archive">🏆<br>完了者一覧</button>
+  <button class="tab-btn"        onclick="switchTab('history',  this)">📊<br>個人履歴</button>
+</div>
+
+<!-- ===== 参加記録ページ ===== -->
+<div id="page-attend" class="page active">
+  <div style="height:12px"></div>
+  <div id="member-list"></div>
+</div>
+
+<!-- ===== 5回券購入ページ ===== -->
+<div id="page-purchase" class="page">
+  <div style="height:12px"></div>
+  <div class="purchase-form">
+    <h3>🎫 5回券 購入記録</h3>
+    <div class="form-group">
+      <label>購入者の種類</label>
+      <div class="toggle-group">
+        <button class="toggle-btn active" id="btn-type-new"    onclick="setBuyType('new')">🆕 新規メンバー</button>
+        <button class="toggle-btn"        id="btn-type-return" onclick="setBuyType('return')">🔄 既存メンバー</button>
+      </div>
+    </div>
+    <div id="buy-new-area">
+      <div class="form-group">
+        <label>購入者名（新規）</label>
+        <input type="text" id="buy-name-new" placeholder="氏名を入力（例：田中太郎）" />
+      </div>
+    </div>
+    <div id="buy-return-area" style="display:none">
+      <div class="form-group">
+        <label>メンバーを選択（追加購入・再登録）</label>
+        <select id="buy-name-return">
+          <option value="">-- メンバーを選択してください --</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>購入日</label>
+      <input type="date" id="buy-date" />
+    </div>
+    <div class="form-group">
+      <label>金額</label>
+      <div class="price-display">¥3,980</div>
+    </div>
+    <button class="btn-purchase" onclick="addPurchase()">✅ 購入を記録する</button>
+  </div>
+  <div class="history-header">
+    <h3>📜 購入履歴</h3>
+    <span class="history-count" id="history-count">0件</span>
+  </div>
+  <div id="purchase-list"></div>
+</div>
+
+<!-- ===== 完了者一覧ページ ===== -->
+<div id="page-archive" class="page">
+  <div style="height:12px"></div>
+  <div class="history-header">
+    <h3>🏆 5回参加完了者</h3>
+    <span class="history-count" id="archive-count">0件</span>
+  </div>
+  <div id="archive-list"></div>
+</div>
+
+<!-- ===== 個人履歴ページ ===== -->
+<div id="page-history" class="page">
+  <div style="height:12px"></div>
+  <div class="history-member-selector">
+    <h3>メンバーを選択</h3>
+    <div class="member-select-btns" id="history-member-btns"></div>
+  </div>
+  <div id="history-detail-area"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ======================================================
+  // データ構造
+  // Member  : { id, name, status:'active'|'completed',
+  //             hasTicket5:bool, nextTicketPurchased:bool,
+  //             tickets:[null|date x5], history:[entry] }
+  // History : { date, type:'ticket5', ticketNo:1-5 }  ※旧データ: string も可
+  // Purchase: { id, memberId, name, date, price }
+  // Archive : { id, memberId, name, completedAt }
+  //   ※完了者一覧はstatus==='completed'のメンバーのみ表示
+  //   ※事前購入で自動切替したラウンドもarchiveに積む（memberはactiveのまま）
+  // ======================================================
+
+  const DATA_VERSION = '5'; // バージョンが変わると自動でデータリセット
+
+  // ===== デフォルトメンバー（実際のメンバーデータ）=====
+  function createDefaultMembers() {
+    const base = [
+      { name:'三宅耕平（ミヤさん）',             count:77, isHost:true },
+      { name:'ヨネさん（柔術マスター）',          count:44 },
+      { name:'ジン',                             count:20 },
+      { name:'のぶさん（最強生物）',              count:15 },
+      { name:'うらさん（笑顔の格闘家）',          count:15 },
+      { name:'ジョウさん（鉄鋼）',               count:11 },
+      { name:'シンさん（ローキックマ・シーン）',  count:11 },
+      { name:'アイちゃん（看板娘）',             count:10 },
+      { name:'カンタさん（神速）',               count: 8 },
+      { name:'空手のジョーさん',                 count: 6 },
+      { name:'かっきーさん（料理人）',           count: 5 },
+      { name:'みなみさん♂（社長）',             count: 5 },
+      { name:'みうちゃん（沖縄の星）',           count: 4 },
+      { name:'まりさん道上',                     count: 3 },
+      { name:'ザッキーさん（中国空手）',         count: 3 },
+      { name:'まきサン（ゴルフ）',              count: 3 },
+      { name:'ふうかちゃん（空手）',            count: 3 },
+      { name:'みなみ先生',                      count: 3 },
+      { name:'ゆうさん',                        count: 2 },
+      { name:'山尾さん（ソルジャー）',          count: 2 },
+      { name:'ゆうき君（息子）',               count: 1 },
+      { name:'ハルキ君',                       count: 1 },
+      { name:'キンコーさん',                   count: 1 },
+    ];
+    const now = Date.now();
+    return base.map((d, i) => ({
+      id: 'M' + (now + i),
+      name: d.name,
+      status: 'active',
+      isHost: d.isHost || false,
+      hasTicket5: false,
+      nextTicketPurchased: false,
+      tickets: [null,null,null,null,null],
+      history: [{ type:'legacy', count: d.count }]
+    }));
+  }
+
+  // ===== ストレージ =====
+  function loadMembers() {
+    const ver = localStorage.getItem('kb_data_version');
+    if (ver === DATA_VERSION) {
+      const raw = localStorage.getItem('kb_members');
+      if (raw) {
+        const list = JSON.parse(raw);
+        list.forEach(m => {
+          if (!m.history)                    m.history              = [];
+          if (!m.status)                     m.status               = 'active';
+          if (m.hasTicket5        == null)   m.hasTicket5           = false;
+          if (m.nextTicketPurchased == null) m.nextTicketPurchased  = false;
+          if (!('isHost' in m))              m.isHost               = false;
+        });
+        return list;
+      }
+    }
+    // 初回 or バージョン変更 → デフォルトデータで初期化
+    const list = createDefaultMembers();
+    saveMembers(list);
+    localStorage.removeItem('kb_purchases');
+    localStorage.removeItem('kb_archive');
+    localStorage.removeItem('kb_favorites');
+    localStorage.setItem('kb_data_version', DATA_VERSION);
+    return list;
+  }
+  function saveMembers(m) { localStorage.setItem('kb_members', JSON.stringify(m)); }
+
+  function loadPurchases() {
+    const raw = localStorage.getItem('kb_purchases');
+    return raw ? JSON.parse(raw) : [];
+  }
+  function savePurchases(p) { localStorage.setItem('kb_purchases', JSON.stringify(p)); }
+
+  function loadArchive() {
+    const raw = localStorage.getItem('kb_archive');
+    return raw ? JSON.parse(raw) : [];
+  }
+  function saveArchive(a) { localStorage.setItem('kb_archive', JSON.stringify(a)); }
+
+  // ===== お気に入り =====
+  function loadFavorites() {
+    const raw = localStorage.getItem('kb_favorites');
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  }
+  function saveFavorites(set) {
+    localStorage.setItem('kb_favorites', JSON.stringify([...set]));
+  }
+  // 参加記録にいる人（アクティブ＋5回券あり）は自動★ON
+  function isFav(m, favs) {
+    return (m.status === 'active' && m.hasTicket5) || favs.has(m.id);
+  }
+  function toggleFavorite(id) {
+    const members = loadMembers();
+    const m = members.find(x => x.id === id);
+    if (!m || (m.status === 'active' && m.hasTicket5)) return; // 参加中は変更不可
+    const favs = loadFavorites();
+    if (favs.has(id)) favs.delete(id); else favs.add(id);
+    saveFavorites(favs);
+    renderHistoryMemberBtns();
+    if (buyType === 'return') setBuyType('return'); // ドロップダウンも更新
+    showToast(favs.has(id) ? `${m.name} さんを★に追加しました` : `${m.name} さんの★を解除しました`);
+    saveToGAS();
+  }
+
+  // ===== 日付 =====
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function todayISO() { return new Date().toISOString().slice(0,10); }
+
+  // ===== 名前ヘルパー =====
+  // 「ヨネさん（柔術マスター）」→「ヨネさん」
+  function getBaseName(name) {
+    return name.replace(/（[^）]*）/, '').trim();
+  }
+  // 「ヨネさん（柔術マスター）」→「（柔術マスター）」
+  function getNickname(name) {
+    const m = name.match(/（[^）]*）/);
+    return m ? m[0] : '';
+  }
+  // メンバーの通算参加回数（移行データ＋新システム）
+  function getMemberTotal(m) {
+    if (!m) return 0;
+    const legacy = (m.history || []).find(e => e && e.type === 'legacy');
+    const legacyCount = legacy ? legacy.count : 0;
+    const newCount = (m.history || []).filter(e =>
+      typeof e === 'string' || (e && (e.type === 'ticket5' || e.type === 'host'))
+    ).length;
+    return legacyCount + newCount;
+  }
+
+  // ===== メンバーの現在のラウンド番号（5回券何回目か）=====
+  // purchases を軸に「このメンバーが今何枚目か」を返す
+  function getMemberRound(m) {
+    const purchases = loadPurchases();
+    const count = purchases.filter(p => p.memberId === m.id || p.name === m.name).length;
+    return Math.max(count, 1); // 旧データで購入記録なくても1回目扱い
+  }
+
+  // ===== トースト =====
+  function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.className = type;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+  }
+
+  // ===== 参加記録ページ =====
+  function renderMembers() {
+    const members = loadMembers();
+    // 5回券を持っているアクティブメンバーのみ表示
+    const active  = members.filter(m => m.status === 'active' && m.hasTicket5);
+    const container = document.getElementById('member-list');
+
+    if (active.length === 0) {
+      container.innerHTML = '<div class="empty-msg">5回券を持つメンバーがいません。<br>「5回券購入」タブから購入してください。</div>';
+      renderHistoryMemberBtns(); return;
+    }
+
+    container.innerHTML = active.map(m => {
+      const usedCount  = m.tickets.filter(t => t !== null).length;
+      const remaining  = 5 - usedCount;
+      const allDone    = usedCount === 5;
+      const round      = getMemberRound(m);
+
+      // バッジ
+      let badge;
+      if (!m.hasTicket5) badge = `<span class="badge-noticket">5回券なし</span>`;
+      else if (allDone)  badge = `<span class="badge-done">🏆 5回達成！</span>`;
+      else               badge = `<span class="badge-ok">残り ${remaining} 回</span>`;
+
+      // ラウンド表示（5回券保有時のみ）
+      const roundLabel = m.hasTicket5
+        ? `<span class="round-label">${round}回目の券</span>` : '';
+
+      // チケット表示
+      let ticketSection = '';
+      if (m.hasTicket5) {
+        const chips = m.tickets.map((t, i) => {
+          if (t) {
+            const parts = t.split('/'); // ['2026','03','31']
+            const md = `${parseInt(parts[1])}/${parseInt(parts[2])}`; // '3/31'
+            const y  = parts[0]; // '2026'
+            return `<div class="ticket used">
+              <span class="ticket-check">✅</span>
+              <span class="ticket-date-md">${md}</span>
+              <span class="ticket-date-y">${y}</span>
+            </div>`;
+          }
+          return `<div class="ticket">チケット<br>${i+1}</div>`;
+        }).join('');
+        ticketSection = `<div class="tickets">${chips}</div>`;
+      } else {
+        ticketSection = `<div class="no-ticket-msg">5回券未購入 ― 「5回券購入」タブで購入してください</div>`;
+      }
+
+      // 5回完了エリア（事前購入なしの場合のみ手動移動ボタンを表示）
+      let completionArea = '';
+      if (m.hasTicket5 && allDone && !m.nextTicketPurchased) {
+        completionArea = `
+          <div class="completion-area">
+            <div class="completion-msg">🏆 ${getBaseName(m.name)} さん 5回参加達成！おめでとうございます！</div>
+            <div class="completion-btns">
+              <button class="btn-undo-complete" onclick="undoComplete('${m.id}')">← 1つ戻す</button>
+              <button class="btn-move-archive"  onclick="moveToArchive('${m.id}')">完了者一覧へ移動 →</button>
+            </div>
+          </div>`;
+      }
+
+      // ボタン行
+      const btnRow = `
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          ${(m.hasTicket5 && usedCount > 0 && !allDone)
+            ? `<button class="btn-undo" onclick="undoAttend('${m.id}')">← 取消</button>` : ''}
+          <button class="btn-history" onclick="openHistory('${m.id}')">履歴を見る</button>
+          <button class="btn-member-del" onclick="deleteMember('${m.id}')">削除</button>
+          ${(m.hasTicket5 && !allDone)
+            ? `<button class="btn-attend" onclick="recordAttend('${m.id}')">✊ 参加</button>` : ''}
+        </div>`;
+
+      return `
+        <div class="member-card${(m.hasTicket5 && allDone && !m.nextTicketPurchased) ? ' completing' : ''}" id="card-${m.id}">
+          <div class="member-header">
+            <div class="member-name">${getBaseName(m.name)}${roundLabel}</div>
+            ${badge}
+          </div>
+          ${ticketSection}
+          <div class="card-footer">
+            <div class="remaining">
+              ${(m.hasTicket5 && !allDone) ? `残り <span>${remaining}</span> / 5` : '&nbsp;'}
+            </div>
+            ${btnRow}
+          </div>
+          ${completionArea}
+        </div>`;
+    }).join('');
+
+    renderHistoryMemberBtns();
+  }
+
+  // ===== 5回券参加を記録 =====
+  function recordAttend(id) {
+    const members = loadMembers();
+    const m = members.find(x => x.id === id);
+    if (!m || !m.hasTicket5) return;
+    if (m.tickets.every(t => t !== null)) {
+      showToast('5回すべて参加済みです', 'error'); return;
+    }
+    const usedCount = m.tickets.filter(t => t !== null).length;
+    const ticketNo  = usedCount + 1;
+    const today     = todayStr();
+    m.tickets[usedCount] = today;
+    m.history.push({ date: today, type: 'ticket5', ticketNo });
+
+    if (m.tickets.every(t => t !== null)) {
+      if (m.nextTicketPurchased) {
+        // ===== 事前購入ありの場合：自動で次の券に切り替え =====
+        const archive = loadArchive();
+        archive.unshift({ id:'A'+Date.now(), memberId:m.id, name:m.name, completedAt: today });
+        saveArchive(archive);
+        m.tickets              = [null,null,null,null,null];
+        m.nextTicketPurchased  = false;
+        // status は active のまま
+        saveMembers(members);
+        renderMembers(); updateArchiveBadge();
+        showToast(`🏆 ${m.name} さん5回完了！次の5回券に自動切り替えしました 🎫`, 'gold');
+      } else {
+        // ===== 事前購入なし：手動移動ボタンを表示 =====
+        saveMembers(members);
+        renderMembers();
+        showToast(`🏆 ${m.name} さんが5回達成！「完了者一覧へ移動」ボタンを押してください`, 'gold');
+      }
+    } else {
+      saveMembers(members);
+      renderMembers();
+      showToast(`${m.name} さんの参加を記録しました！ ✊`);
+    }
+    saveToGAS();
+  }
+
+  // ===== 5回目の取消 =====
+  function undoComplete(id) {
+    const members = loadMembers();
+    const m = members.find(x => x.id === id);
+    if (!m) return;
+    for (let i = m.tickets.length - 1; i >= 0; i--) {
+      if (m.tickets[i] !== null) {
+        m.tickets[i] = null;
+        removeLastTicket5(m);
+        saveMembers(members);
+        renderMembers();
+        showToast(`${m.name} さんの5回目の参加を取り消しました`);
+        return;
+      }
+    }
+  }
+
+  // ===== 通常の取消 =====
+  function undoAttend(id) {
+    const members = loadMembers();
+    const m = members.find(x => x.id === id);
+    if (!m) return;
+    for (let i = m.tickets.length - 1; i >= 0; i--) {
+      if (m.tickets[i] !== null) {
+        m.tickets[i] = null;
+        removeLastTicket5(m);
+        saveMembers(members);
+        renderMembers();
+        showToast(`${m.name} さんの直前の参加を取り消しました`);
+        saveToGAS();
+        return;
+      }
+    }
+  }
+
+  function removeLastTicket5(m) {
+    for (let i = m.history.length - 1; i >= 0; i--) {
+      const e = m.history[i];
+      if (typeof e === 'string' || (e && e.type === 'ticket5')) {
+        m.history.splice(i, 1); return;
+      }
+    }
+  }
+
+  // ===== 完了者一覧へ移動（手動） =====
+  function moveToArchive(id) {
+    const members = loadMembers();
+    const m = members.find(x => x.id === id);
+    if (!m || !m.tickets.every(t => t !== null)) return;
+
+    const archive = loadArchive();
+    archive.unshift({ id:'A'+Date.now(), memberId:m.id, name:m.name, completedAt:m.tickets[4] });
+    saveArchive(archive);
+
+    m.status              = 'completed';
+    m.hasTicket5          = false;
+    m.nextTicketPurchased = false;
+    m.tickets             = [null,null,null,null,null];
+    saveMembers(members);
+
+    renderMembers(); renderArchive(); updateArchiveBadge();
+    showToast(`${m.name} さんを完了者一覧に移動しました 🏆`, 'gold');
+    saveToGAS();
+
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-archive').classList.add('active');
+    document.getElementById('tab-archive').classList.add('active');
+  }
+
+  // ===== 購入タイプ切替 =====
+  let buyType = 'new';
+
+  function setBuyType(type) {
+    buyType = type;
+    document.getElementById('btn-type-new').classList.toggle('active',    type === 'new');
+    document.getElementById('btn-type-return').classList.toggle('active', type === 'return');
+    document.getElementById('buy-new-area').style.display    = type === 'new'    ? '' : 'none';
+    document.getElementById('buy-return-area').style.display = type === 'return' ? '' : 'none';
+    if (type === 'return') {
+      const sel     = document.getElementById('buy-name-return');
+      const members = loadMembers();
+      const favs    = loadFavorites();
+      // ★ONの全メンバーを取得（購入履歴の有無に関わらず）
+      const eligible = members.filter(m => isFav(m, favs));
+      // アクティブを上に、完了済みを下に並べる
+      eligible.sort((a, b) => {
+        if (a.status === b.status) return 0;
+        return a.status === 'active' ? -1 : 1;
+      });
+      sel.innerHTML = '<option value="">-- メンバーを選択してください --</option>' +
+        eligible.map(m => {
+          const allDone = m.tickets && m.tickets.every(t => t !== null);
+          const tag = m.status === 'completed'              ? '（完了済み）' :
+                      m.hasTicket5 && allDone               ? '（5回達成・処理待ち）' :
+                      m.hasTicket5 && m.nextTicketPurchased ? '（次回券予約済み）' :
+                      m.hasTicket5                          ? '（利用中）' :
+                                                              '（★登録済み）';
+          return `<option value="${m.id}">${getBaseName(m.name)} ${tag}</option>`;
+        }).join('');
+    }
+  }
+
+  // ===== 購入を記録 =====
+  function addPurchase() {
+    const date = document.getElementById('buy-date').value;
+    if (!date) { showToast('購入日を選択してください', 'error'); return; }
+    const members = loadMembers();
+
+    if (buyType === 'new') {
+      const name = document.getElementById('buy-name-new').value.trim();
+      if (!name) { showToast('購入者名を入力してください', 'error'); return; }
+      if (members.find(m => m.name === name && m.status === 'active')) {
+        showToast('同じ名前のアクティブなメンバーがすでにいます', 'error'); return;
+      }
+      const newId = 'M' + Date.now();
+      members.push({ id:newId, name, status:'active', hasTicket5:true,
+                     nextTicketPurchased:false, tickets:[null,null,null,null,null], history:[] });
+      saveMembers(members);
+      savePurchaseEntry(newId, name, date);
+      document.getElementById('buy-name-new').value = '';
+    } else {
+      const memberId = document.getElementById('buy-name-return').value;
+      if (!memberId) { showToast('メンバーを選択してください', 'error'); return; }
+      const m = members.find(x => x.id === memberId);
+      if (!m) return;
+
+      if (m.status === 'active') {
+        if (!m.hasTicket5) {
+          // ★ONで未チケット → 初回5回券購入（過去の履歴はそのまま引き継ぐ）
+          m.hasTicket5          = true;
+          m.nextTicketPurchased = false;
+          saveMembers(members);
+          savePurchaseEntry(m.id, m.name, date);
+        } else if (m.nextTicketPurchased) {
+          showToast('すでに次の5回券が予約済みです', 'error'); return;
+        } else {
+          const allDone = m.tickets.every(t => t !== null);
+          if (allDone) {
+            // 5回完了済みのまま購入 → 即座にアーカイブ登録＋チケットリセット
+            const archive = loadArchive();
+            archive.unshift({ id:'A'+Date.now(), memberId:m.id, name:m.name, completedAt:m.tickets[4] });
+            saveArchive(archive);
+            m.tickets             = [null,null,null,null,null];
+            m.nextTicketPurchased = false;
+            updateArchiveBadge();
+          } else {
+            // チケット残りあり → 予約済みとして次ラウンド確保
+            m.nextTicketPurchased = true;
+          }
+          saveMembers(members);
+          savePurchaseEntry(m.id, m.name, date);
+        }
+      } else {
+        // 完了済みメンバーの再登録 → 参加記録ページに復活（過去の履歴はそのまま引き継ぐ）
+        m.status              = 'active';
+        m.hasTicket5          = true;
+        m.nextTicketPurchased = false;
+        m.tickets             = [null,null,null,null,null];
+        saveMembers(members);
+        savePurchaseEntry(m.id, m.name, date);
+      }
+      setBuyType('return');
+    }
+
+    renderMembers(); renderPurchases(); updateArchiveBadge();
+    showToast('5回券の購入を記録しました 🎫', 'gold');
+    saveToGAS();
+  }
+
+  function savePurchaseEntry(memberId, name, date) {
+    const purchases = loadPurchases();
+    purchases.unshift({ id:'P'+Date.now(), memberId, name, date, price:3980 });
+    savePurchases(purchases);
+  }
+
+  // ===== メンバー削除 =====
+  function deleteMember(id) {
+    const members = loadMembers();
+    const m = members.find(x => x.id === id);
+    if (!m) return;
+    if (!confirm(`「${m.name}」さんを完全に削除しますか？\nこの操作は取り消せません。`)) return;
+    if (!confirm(`最終確認：「${m.name}」さんのデータを完全に削除します。\n本当によろしいですか？`)) return;
+    saveMembers(members.filter(x => x.id !== id));
+    savePurchases(loadPurchases().filter(p => p.memberId !== id && p.name !== m.name));
+    saveArchive(loadArchive().filter(a => a.memberId !== id && a.name !== m.name));
+    renderMembers(); renderPurchases(); renderArchive(); updateArchiveBadge();
+    showToast(`${m.name} さんを削除しました`);
+    saveToGAS();
+  }
+
+  function deletePurchase(id) {
+    savePurchases(loadPurchases().filter(p => p.id !== id));
+    renderPurchases();
+    showToast('購入履歴を削除しました');
+    saveToGAS();
+  }
+
+  function renderPurchases() {
+    const purchases = loadPurchases();
+    const members   = loadMembers();
+    const archive   = loadArchive();
+    document.getElementById('history-count').textContent = `${purchases.length}件`;
+    const container = document.getElementById('purchase-list');
+    if (purchases.length === 0) {
+      container.innerHTML = '<div class="empty-msg">購入履歴がまだありません</div>'; return;
+    }
+    container.innerHTML = purchases.map(p => {
+      const { badge, isReserved } = getPurchaseStateBadge(p, members, archive, purchases);
+      const pm       = members.find(x => x.id === p.memberId || x.name === p.name);
+      const baseName = getBaseName(p.name);
+      const total    = getMemberTotal(pm);
+      const dispName = `${baseName}・通算${total}回`;
+      return `
+        <div class="history-item">
+          <div>
+            <div class="hi-name">🎫 ${dispName}</div>
+            <div class="hi-date">${p.date}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${badge}
+            ${isReserved
+              ? `<button class="btn-cancel-prepurchase" onclick="cancelPrePurchaseById('${p.id}')">キャンセル</button>`
+              : ''}
+            <button class="btn-del" onclick="deletePurchase('${p.id}')">削除</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ===== 購入状態を判定してバッジを返す =====
+  function getPurchaseStateBadge(purchase, members, archive, allPurchases) {
+    const m = members.find(x => x.id === purchase.memberId || x.name === purchase.name);
+    if (!m || m.status === 'completed') {
+      return { badge: '<span class="state-badge state-used">使用済み</span>', isReserved: false };
+    }
+    // アクティブメンバー：このメンバーの購入を古い順に並べる
+    const memberPurchases = allPurchases
+      .filter(p => p.memberId === m.id || p.name === m.name)
+      .reverse(); // 古い順（index 0 が最初の購入）
+    const archiveCount = archive.filter(a => a.memberId === m.id || a.name === m.name).length;
+    const idx = memberPurchases.findIndex(p => p.id === purchase.id);
+
+    if (idx < archiveCount) {
+      return { badge: '<span class="state-badge state-used">使用済み</span>', isReserved: false };
+    }
+    if (idx === archiveCount) {
+      return { badge: '<span class="state-badge state-active">利用中</span>', isReserved: false };
+    }
+    return { badge: '<span class="state-badge state-reserved">予約済み</span>', isReserved: true };
+  }
+
+  // ===== 予約済みキャンセル（購入履歴から） =====
+  function cancelPrePurchaseById(purchaseId) {
+    const purchases = loadPurchases();
+    const p = purchases.find(x => x.id === purchaseId);
+    if (!p) return;
+    const members = loadMembers();
+    const m = members.find(x => x.id === p.memberId || x.name === p.name);
+    if (!m || !m.nextTicketPurchased) return;
+    if (!confirm(`「${m.name}」さんの予約済み5回券をキャンセルしますか？\n購入記録も削除されます。`)) return;
+    m.nextTicketPurchased = false;
+    saveMembers(members);
+    savePurchases(purchases.filter(x => x.id !== purchaseId));
+    renderPurchases();
+    renderMembers();
+    showToast(`${m.name} さんの予約をキャンセルしました`);
+  }
+
+  // ===== 完了者一覧 =====
+  function renderArchive() {
+    const members   = loadMembers();
+    const purchases = loadPurchases();
+    // status === 'completed' のメンバーだけ表示
+    const completed = members.filter(m => m.status === 'completed');
+
+    document.getElementById('archive-count').textContent = `${completed.length}件`;
+    const container = document.getElementById('archive-list');
+    if (completed.length === 0) {
+      container.innerHTML = '<div class="empty-msg">まだ5回参加完了者はいません</div>'; return;
+    }
+
+    const archive = loadArchive();
+    container.innerHTML = completed.map(m => {
+      // 5回券購入回数（purchases から）
+      const ticketCount = purchases.filter(p =>
+        p.memberId === m.id || p.name === m.name
+      ).length;
+
+      // 完了回数（archive エントリ数）
+      const completionCount = archive.filter(a =>
+        a.memberId === m.id || a.name === m.name
+      ).length;
+
+      // 最終完了日（archiveの最新entry）
+      const lastEntry   = archive.find(a => a.memberId === m.id || a.name === m.name);
+      const lastDate    = lastEntry ? lastEntry.completedAt : '—';
+
+      return `
+        <div class="archive-card">
+          <div class="archive-row">
+            <div class="archive-name">${getBaseName(m.name)}</div>
+            <button class="btn-delete-member" onclick="deleteMember('${m.id}')">🗑️ 削除</button>
+          </div>
+          <div class="archive-meta">
+            <div class="archive-chip">🏅 <strong>${completionCount}</strong> 回完了</div>
+            <div class="archive-chip">🎫 5回券 <strong>${ticketCount}</strong> 回購入</div>
+            <div class="archive-chip date-chip">✅ 最終完了日：<strong>${lastDate}</strong></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function updateArchiveBadge() {
+    const count = loadMembers().filter(m => m.status === 'completed').length;
+    const tab   = document.getElementById('tab-archive');
+    const ex    = tab.querySelector('.tab-badge');
+    if (ex) ex.remove();
+    tab.innerHTML = count > 0
+      ? `🏆<br>完了者一覧<span class="tab-badge">${count}</span>`
+      : `🏆<br>完了者一覧`;
+  }
+
+  // ===== 個人履歴 =====
+  let selectedMemberId = null;
+  let editingMemberId  = null;
+  let editingLegacyId  = null;
+
+  function renderHistoryMemberBtns() {
+    const members   = loadMembers();
+    const favs      = loadFavorites();
+    const container = document.getElementById('history-member-btns');
+    if (members.length === 0) {
+      container.innerHTML = '<span style="color:#556;font-size:0.85rem;">メンバーがいません</span>'; return;
+    }
+
+    // 主催者→通算参加回数降順→50音順
+    const sorted = [...members].sort((a, b) => {
+      if (a.isHost) return -1;
+      if (b.isHost) return  1;
+      const diff = getMemberTotal(b) - getMemberTotal(a);
+      if (diff !== 0) return diff;
+      return a.name.localeCompare(b.name, 'ja');
+    });
+    const favMembers   = sorted.filter(m => isFav(m, favs));
+    const otherMembers = sorted.filter(m => !isFav(m, favs));
+
+    function memberRowHTML(m) {
+      // 編集モード
+      if (editingMemberId === m.id) {
+        const safe = m.name.replace(/"/g, '&quot;');
+        return `<div class="member-edit-row">
+          <input type="text" class="edit-name-input" value="${safe}"
+            onkeydown="if(event.key==='Enter')saveEditMember('${m.id}');if(event.key==='Escape')cancelEditMember();" />
+          <button class="btn-edit-save"   onclick="saveEditMember('${m.id}')">保存</button>
+          <button class="btn-edit-cancel" onclick="cancelEditMember()">キャンセル</button>
+        </div>`;
+      }
+      // 通常表示
+      const done      = m.status === 'completed';
+      const isAutoFav = m.status === 'active' && m.hasTicket5;
+      const starred   = isFav(m, favs);
+      const btnCls    = `btn-member-select${selectedMemberId===m.id?' active':''}${done?' completed-member':''}`;
+      const starCls   = isAutoFav ? 'btn-star fav-auto' : (starred ? 'btn-star fav-on' : 'btn-star fav-off');
+      const starChar  = starred ? '★' : '☆';
+      const starEvt   = isAutoFav ? '' : `onclick="toggleFavorite('${m.id}')"`;
+      const starTitle = isAutoFav ? '参加中（自動★）' : (starred ? 'お気に入り解除' : 'お気に入りに追加');
+      const total      = getMemberTotal(m);
+      const ticketBuys = Math.ceil(total / 5);
+      // 通算回数エリア：編集中か通常表示か
+      let statsArea;
+      if (editingLegacyId === m.id) {
+        statsArea = `<div class="legacy-edit-row">
+          <span class="member-stats">通算</span>
+          <input type="number" class="legacy-edit-input" value="${total}" min="0"
+            onkeydown="if(event.key==='Enter')saveLegacyCount('${m.id}');if(event.key==='Escape')cancelLegacyEdit();" />
+          <span class="member-stats">回</span>
+          <button class="btn-edit-save" onclick="saveLegacyCount('${m.id}')">保存</button>
+          <button class="btn-edit-cancel" onclick="cancelLegacyEdit()">キャンセル</button>
+        </div>`;
+      } else {
+        statsArea = `<div class="member-stats-row">
+          <span class="member-stats">通算${total}回 ・ 5回券${ticketBuys}回購入</span>
+          <button class="btn-edit-count" onclick="startLegacyEdit('${m.id}')" title="参加回数を編集">✏️</button>
+        </div>`;
+      }
+      return `<div class="member-btn-row">
+        <button class="${starCls}" ${starEvt} title="${starTitle}">${starChar}</button>
+        <div class="member-btn-col">
+          <button class="${btnCls}" onclick="selectHistoryMember('${m.id}')">${done?'🏆':'🥊'} ${getBaseName(m.name)}</button>
+          ${statsArea}
+        </div>
+        <button class="btn-edit" onclick="startEditMember('${m.id}')" title="名前を編集">✏️</button>
+        <button class="btn-delete-member" onclick="deleteMember('${m.id}')" title="削除">🗑️</button>
+      </div>`;
+    }
+
+    let html = '';
+    if (favMembers.length > 0) {
+      html += '<div class="history-group-label">⭐ よく来るメンバー</div>';
+      html += favMembers.map(memberRowHTML).join('');
+    }
+    if (otherMembers.length > 0) {
+      html += `<div class="history-group-label" style="margin-top:${favMembers.length?'14px':'10px'}">その他のメンバー</div>`;
+      html += otherMembers.map(memberRowHTML).join('');
+    }
+    container.innerHTML = html;
+
+    // 編集モード中はフォーカスを入力欄に
+    if (editingMemberId) {
+      const inp = container.querySelector('.edit-name-input');
+      if (inp) { inp.focus(); inp.select(); }
+    }
+  }
+
+  function selectHistoryMember(id) {
+    selectedMemberId = id;
+    renderHistoryMemberBtns();
+    renderHistoryDetail(id);
+  }
+
+  // ===== 名前編集 =====
+  function startEditMember(id) {
+    editingLegacyId = null; // 通算回数編集を閉じる
+    editingMemberId = id;
+    renderHistoryMemberBtns();
+  }
+
+  function saveEditMember(id) {
+    const inp = document.querySelector('.edit-name-input');
+    if (!inp) return;
+    const newName = inp.value.trim();
+    if (!newName) { showToast('名前を入力してください', 'error'); inp.focus(); return; }
+    const members = loadMembers();
+    const m = members.find(x => x.id === id);
+    if (!m) return;
+    m.name = newName;
+    saveMembers(members);
+    // 購入記録の名前を更新
+    const purchases = loadPurchases();
+    purchases.forEach(p => { if (p.memberId === id) p.name = newName; });
+    savePurchases(purchases);
+    // アーカイブの名前を更新
+    const archive = loadArchive();
+    archive.forEach(a => { if (a.memberId === id) a.name = newName; });
+    saveArchive(archive);
+    editingMemberId = null;
+    renderHistoryMemberBtns();
+    if (selectedMemberId === id) renderHistoryDetail(id);
+    renderMembers();
+    renderArchive();
+    showToast(`名前を「${newName}」に変更しました`);
+    saveToGAS();
+  }
+
+  function cancelEditMember() {
+    editingMemberId = null;
+    renderHistoryMemberBtns();
+  }
+
+  // ===== 通算参加回数編集 =====
+  function startLegacyEdit(id) {
+    editingMemberId = null; // 名前編集を閉じる
+    editingLegacyId = id;
+    renderHistoryMemberBtns();
+    setTimeout(() => {
+      const inp = document.querySelector('.legacy-edit-input');
+      if (inp) { inp.focus(); inp.select(); }
+    }, 40);
+  }
+
+  function saveLegacyCount(id) {
+    const inp = document.querySelector('.legacy-edit-input');
+    if (!inp) return;
+    const newTotal = parseInt(inp.value, 10);
+    if (isNaN(newTotal) || newTotal < 0) {
+      showToast('0以上の数字を入力してください', 'error'); inp.focus(); return;
+    }
+    const members = loadMembers();
+    const m = members.find(x => x.id === id);
+    if (!m) return;
+    // 新システムでの参加回数（ticket5 + host）
+    const newCount = (m.history || []).filter(e =>
+      typeof e === 'string' || (e && (e.type === 'ticket5' || e.type === 'host'))
+    ).length;
+    if (newTotal < newCount) {
+      showToast(`現在の参加記録（${newCount}回）より少ない値は入力できません`, 'error');
+      inp.focus(); return;
+    }
+    // legacyエントリを更新
+    const legacyIdx = m.history.findIndex(e => e && e.type === 'legacy');
+    const newLegacy = newTotal - newCount;
+    if (legacyIdx >= 0) {
+      m.history[legacyIdx].count = newLegacy;
+    } else {
+      m.history.unshift({ type:'legacy', count: newLegacy });
+    }
+    saveMembers(members);
+    editingLegacyId = null;
+    renderHistoryMemberBtns();
+    if (selectedMemberId === id) renderHistoryDetail(id);
+    showToast(`通算参加回数を ${newTotal} 回に更新しました`);
+    saveToGAS();
+  }
+
+  function cancelLegacyEdit() {
+    editingLegacyId = null;
+    renderHistoryMemberBtns();
+  }
+
+  function renderHistoryDetail(id) {
+    const members   = loadMembers();
+    const m         = members.find(x => x.id === id);
+    const container = document.getElementById('history-detail-area');
+    if (!m) { container.innerHTML = ''; return; }
+
+    const statusChip = m.status === 'completed'
+      ? `<span class="status-chip-completed">完了済み</span>` : '';
+
+    // ticket5（＋主催者はhostも）エントリを抽出・新しい順
+    const ticket5Entries = (m.history || [])
+      .filter(e => typeof e === 'string' || (e && (e.type === 'ticket5' || (m.isHost && e.type === 'host'))))
+      .reverse();
+    const total = ticket5Entries.length;
+
+    // 旧システム移行データ
+    const legacyEntry = (m.history || []).find(e => e && e.type === 'legacy');
+    const legacyCount = legacyEntry ? legacyEntry.count : 0;
+    const totalAll    = total + legacyCount;
+
+    const legacyHTML = legacyEntry
+      ? `<div class="legacy-record">📋 過去参加実績：${legacyCount}回（旧システムより移行）</div>`
+      : '';
+
+    if (total === 0) {
+      container.innerHTML = `
+        <div class="history-detail">
+          <div class="history-detail-header">
+            <div class="history-detail-name">🥊 ${getBaseName(m.name)}${statusChip}</div>
+            <span class="history-total-badge">通算 ${totalAll} 回</span>
+          </div>
+          ${legacyHTML}
+          ${!legacyEntry ? '<div class="empty-msg" style="padding:20px 0;">まだ参加記録がありません</div>' : ''}
+        </div>`; return;
+    }
+
+    // 表示：第〇回目 ／ YYYY/MM/DD（新しい順）
+    const datesHTML = ticket5Entries.map((e, i) => {
+      const date = typeof e === 'string' ? e : e.date;
+      const no   = total - i;
+      return `
+        <div class="history-date-item">
+          <span class="hdi-round">第 ${no} 回目</span>
+          <span class="hdi-sep">／</span>
+          <span class="hdi-date">${date}</span>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = `
+      <div class="history-detail">
+        <div class="history-detail-header">
+          <div class="history-detail-name">🥊 ${getBaseName(m.name)}${statusChip}</div>
+          <span class="history-total-badge">通算 ${totalAll} 回</span>
+        </div>
+        ${datesHTML}
+        ${legacyHTML}
+      </div>`;
+  }
+
+  function openHistory(id) {
+    selectedMemberId = id;
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-history').classList.add('active');
+    document.querySelectorAll('.tab-btn')[3].classList.add('active');
+    renderHistoryMemberBtns();
+    renderHistoryDetail(id);
+  }
+
+  // ===== 主催者（ミヤさん）開催記録 =====
+  function getHostTotal() {
+    const host = loadMembers().find(m => m.isHost);
+    return getMemberTotal(host);
+  }
+
+  function updateHostButton() {
+    const btn = document.getElementById('btn-host-attend');
+    if (btn) btn.innerHTML = `開催<br>${getHostTotal()}回目`;
+  }
+
+  function startHostEdit() {
+    const inp = document.getElementById('host-edit-input');
+    if (inp) inp.value = getHostTotal();
+    document.getElementById('host-normal-area').style.display = 'none';
+    document.getElementById('host-edit-area').style.display = 'flex';
+    if (inp) setTimeout(() => { inp.focus(); inp.select(); }, 40);
+  }
+
+  function saveHostCount() {
+    const inp = document.getElementById('host-edit-input');
+    const newTotal = parseInt(inp.value, 10);
+    if (isNaN(newTotal) || newTotal < 1) { showToast('1以上の数字を入力してください', 'error'); return; }
+    const members = loadMembers();
+    const host = members.find(m => m.isHost);
+    if (!host) { showToast('主催者データが見つかりません', 'error'); return; }
+    const hostNewCount = (host.history||[]).filter(e =>
+      typeof e === 'string' || (e && (e.type === 'ticket5' || e.type === 'host'))
+    ).length;
+    if (newTotal < hostNewCount) {
+      showToast(`現在の記録回数（${hostNewCount}回）より小さくできません`, 'error'); return;
+    }
+    const newLegacy = newTotal - hostNewCount;
+    const legacyIdx = host.history.findIndex(e => e && e.type === 'legacy');
+    if (legacyIdx >= 0) host.history[legacyIdx].count = newLegacy;
+    else host.history.unshift({ type: 'legacy', count: newLegacy });
+    saveMembers(members);
+    cancelHostEdit();
+    updateHostButton();
+    renderHistoryMemberBtns();
+    if (selectedMemberId === host.id) renderHistoryDetail(host.id);
+    showToast(`開催回数を ${newTotal} 回に更新しました`, 'gold');
+    saveToGAS();
+  }
+
+  function cancelHostEdit() {
+    document.getElementById('host-normal-area').style.display = '';
+    document.getElementById('host-edit-area').style.display = 'none';
+  }
+
+  function recordHostAttend() {
+    const members = loadMembers();
+    const host = members.find(m => m.isHost);
+    if (!host) { showToast('主催者データが見つかりません', 'error'); return; }
+    const nextNo = getHostTotal() + 1;
+    if (!confirm(`${nextNo}回目の開催を記録しますか？`)) return;
+    host.history.push({ type:'host', date: todayStr() });
+    saveMembers(members);
+    updateHostButton();
+    if (selectedMemberId === host.id) renderHistoryDetail(host.id);
+    showToast(`開催 ${nextNo}回目 ✅`, 'gold');
+    saveToGAS();
+  }
+
+  // ===== GAS連携 =====
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbzVhgDsPIctq3OQ3d6dVlrhwiHLo1xVGDcquwW7QlQk9StJu1ZZVp7rwvgvIyn_JYcv/exec';
+  let syncBarTimer = null;
+
+  function showSyncBar(msg, type) {
+    const bar = document.getElementById('sync-bar');
+    bar.textContent = msg;
+    bar.className = 'sync-bar show ' + type;
+    bar.style.display = 'block';
+    if (syncBarTimer) clearTimeout(syncBarTimer);
+    if (type !== 'loading') {
+      syncBarTimer = setTimeout(() => {
+        bar.classList.remove('show');
+        bar.style.display = 'none';
+      }, 3000);
+    }
+  }
+  function hideSyncBar() {
+    if (syncBarTimer) clearTimeout(syncBarTimer);
+    const bar = document.getElementById('sync-bar');
+    bar.classList.remove('show');
+    bar.style.display = 'none';
+  }
+
+  async function saveToGAS() {
+    showSyncBar('💾 保存中...', 'loading');
+    try {
+      const payload = JSON.stringify({
+        action:    'save',
+        version:   DATA_VERSION,
+        members:   JSON.parse(localStorage.getItem('kb_members')   || '[]'),
+        purchases: JSON.parse(localStorage.getItem('kb_purchases') || '[]'),
+        archive:   JSON.parse(localStorage.getItem('kb_archive')   || '[]'),
+        favorites: JSON.parse(localStorage.getItem('kb_favorites') || '[]')
+      });
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        body: payload,
+        headers: { 'Content-Type': 'text/plain' }
+      });
+      const result = await res.json();
+      if (result && result.status === 'ok') {
+        showSyncBar('✅ 保存しました！', 'success');
+      } else {
+        throw new Error('GAS returned error');
+      }
+    } catch (e) {
+      showSyncBar('❌ 保存失敗・ローカルに保存', 'error');
+    }
+  }
+
+  async function loadFromGAS() {
+    showSyncBar('📡 データを読み込み中...', 'loading');
+    try {
+      const res = await fetch(GAS_URL + '?action=load', { method: 'GET' });
+      const data = await res.json();
+      if (data && data.version === DATA_VERSION && data.members && data.members.length > 0) {
+        // スプレッドシートにデータあり → 優先して使用
+        localStorage.setItem('kb_members',      JSON.stringify(data.members));
+        localStorage.setItem('kb_purchases',    JSON.stringify(data.purchases   || []));
+        localStorage.setItem('kb_archive',      JSON.stringify(data.archive     || []));
+        localStorage.setItem('kb_favorites',    JSON.stringify(data.favorites   || []));
+        localStorage.setItem('kb_data_version', DATA_VERSION);
+        hideSyncBar();
+        return true;
+      }
+      // GASが空 or バージョン違い → localStorageのデータをそのまま使う
+      hideSyncBar();
+      return false;
+    } catch (e) {
+      // 読み込み失敗 → ローカルデータで継続
+      hideSyncBar();
+      return false;
+    }
+  }
+
+  // ===== タブ切替 =====
+  function switchTab(tab, btn) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + tab).classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (tab === 'history')  { renderHistoryMemberBtns(); if (selectedMemberId) renderHistoryDetail(selectedMemberId); }
+    if (tab === 'purchase') { setBuyType(buyType); }
+  }
+
+  // ===== 初期化 =====
+  document.getElementById('buy-date').value = todayISO();
+  (async () => {
+    await loadFromGAS(); // スプレッドシートからデータを優先読み込み
+    renderMembers();
+    renderPurchases();
+    renderArchive();
+    updateArchiveBadge();
+    renderHistoryMemberBtns();
+    updateHostButton();
+  })();
+</script>
+</body>
+</html>

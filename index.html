@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>キック参加アプリ</title>
+  <title>佐世保キックボクシング倶楽部 参加アプリ</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -630,7 +630,7 @@
 
 <div class="tab-nav">
   <button class="tab-btn active" onclick="switchTab('attend',  this)">📋<br>参加記録</button>
-  <button class="tab-btn"        onclick="switchTab('purchase', this)">🎫<br>5回券購入</button>
+  <button class="tab-btn"        onclick="switchTab('purchase', this)">🎫<br>チケット確認</button>
   <button class="tab-btn" onclick="switchTab('archive',this)" id="tab-archive" style="display:none">🏆<br>完了者一覧</button>
   <button class="tab-btn"        onclick="switchTab('history',  this)">📊<br>個人履歴</button>
 </div>
@@ -673,7 +673,12 @@
   // ======================================================
   // 管理者認証
   // ======================================================
-  const ADMIN_PASSWORD = '5555';
+  const ADMIN_PASSWORD_HASH = 'c1f330d0aff31c1c87403f1e4347bcc21aff7c179908723535f2b31723702525';
+
+  async function hashPassword(pw) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
   let isAdmin = false;
 
   function openAdminModal() {
@@ -689,9 +694,10 @@
     document.getElementById('modal-error').style.display = 'none';
   }
 
-  function doAdminLogin() {
+  async function doAdminLogin() {
     const pw = document.getElementById('modal-pw-input').value;
-    if (pw === ADMIN_PASSWORD) {
+    const hashed = await hashPassword(pw);
+    if (hashed === ADMIN_PASSWORD_HASH) {
       isAdmin = true;
       closeAdminModal();
       applyAdminMode();

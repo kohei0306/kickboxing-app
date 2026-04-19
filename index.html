@@ -21,15 +21,42 @@
     }
     .header-inner {
       position:relative; display:flex; align-items:center;
-      justify-content:center; min-height:44px;
+      justify-content:center; min-height:64px;
     }
-    header h1 { font-size: 1.1rem; font-weight: bold; letter-spacing: 1px; text-align:center; }
+    header h1 { font-size: clamp(0.72rem, 3.2vw, 1.1rem); font-weight: bold; letter-spacing: 0.5px; text-align:center; line-height:1.4; }
     header p  { font-size: 0.8rem; opacity: 0.85; margin-top: 2px; text-align:center; }
-    .header-center { text-align:center; }
+    .header-center { text-align:center; padding: 0 70px; }
+    .header-left {
+      position:absolute; left:0; top:50%; transform:translateY(-50%);
+      display:flex; align-items:center;
+    }
     .header-right {
       position:absolute; right:0; top:50%; transform:translateY(-50%);
       display:flex; flex-direction:column; align-items:center; gap:2px;
     }
+
+    /* ===== 練習日ボタン ===== */
+    .btn-practice-day {
+      background: rgba(255,255,255,0.22);
+      border: 2px solid rgba(255,255,255,0.7);
+      color: #fff;
+      padding: 10px 13px;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.4;
+      text-align: center;
+      white-space: nowrap;
+      min-width: 58px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .btn-practice-day:hover  { background: rgba(255,255,255,0.35); }
+    .btn-practice-day:active { background: rgba(255,255,255,0.45); }
 
     /* ===== 管理者ログインボタン（未ログイン時） ===== */
     .btn-admin-login {
@@ -91,6 +118,7 @@
     @media (max-width: 600px) {
       .header-inner { flex-direction: column; align-items: stretch; gap: 4px; }
       .header-center { text-align: center; }
+      .header-left  { position: static; transform: none; align-self: flex-start; }
       .header-right { position: static; transform: none; align-self: flex-end; }
     }
 
@@ -583,12 +611,16 @@
 
 <header>
   <div class="header-inner">
-    <div class="header-left-group">
-      <div>
-        <h1>🥊 キック参加アプリ &nbsp;<span id="host-count-inline" style="font-size:0.75rem;font-weight:bold;opacity:0.9;">開催 <span id="host-count-num">〇</span>回目</span></h1>
-        <p id="header-sub">参加管理アプリ</p>
-      </div>
+    <!-- ===== 左：練習日ボタン ===== -->
+    <div class="header-left">
+      <a href="https://web-blend.com/#schedule" target="_blank" class="btn-practice-day">🗓️ 練習日</a>
     </div>
+    <!-- ===== 中央：タイトル ===== -->
+    <div class="header-center">
+      <h1>🥊 佐世保キックボクシング倶楽部　<span id="host-count-inline" style="font-size:0.75rem;font-weight:bold;opacity:0.9;">開催 <span id="host-count-num">〇</span>回目</span></h1>
+      <p id="header-sub">〜参加アプリ〜</p>
+    </div>
+    <!-- ===== 右：管理者ログイン ===== -->
     <div class="header-right" id="header-right-area">
       <button class="btn-admin-login" id="btn-show-login" onclick="openAdminModal()">管理者<br>ログイン</button>
     </div>
@@ -683,7 +715,6 @@
     const headerSub = document.getElementById('header-sub');
 
     if (isAdmin) {
-      // ログイン済み：host-area を表示
       rightArea.innerHTML = `
         <div id="host-normal-area">
           <button id="btn-host-attend" class="btn-host" onclick="recordHostAttend()">開催<br>〇回目</button>
@@ -699,35 +730,17 @@
         </div>
         <div class="admin-mode-badge" onclick="doAdminLogout()" style="cursor:pointer;" title="クリックでログアウト">管理者モード ✕</div>
       `;
-      headerSub.textContent = '参加管理アプリ（管理者）';
-      rightArea.innerHTML = `
-        <div id="host-normal-area">
-          <button id="btn-host-attend" class="btn-host" onclick="recordHostAttend()">開催<br>〇回目</button>
-          <button class="btn-host-edit" onclick="startHostEdit()">✏️ 編集</button>
-        </div>
-        <div id="host-edit-area" style="display:none;flex-direction:column;align-items:center;gap:4px;">
-          <input type="number" id="host-edit-input" class="host-edit-input" min="1"
-            onkeydown="if(event.key==='Enter')saveHostCount();if(event.key==='Escape')cancelHostEdit();" />
-          <div style="display:flex;gap:4px;">
-            <button class="btn-host-save" onclick="saveHostCount()">保存</button>
-            <button class="btn-host-cancel" onclick="cancelHostEdit()">キャンセル</button>
-          </div>
-        </div>
-        <div class="admin-mode-badge" onclick="doAdminLogout()" style="cursor:pointer;" title="クリックでログアウト">管理者モード ✕</div>
-      `;
+      headerSub.textContent = '〜参加アプリ〜（管理者）';
       updateHostButton();
       document.getElementById('tab-archive').style.display = '';
     } else {
-      // 未ログイン：ログインボタンのみ
       rightArea.innerHTML = `<button class="btn-admin-login" onclick="openAdminModal()">管理者<br>ログイン</button>`;
-      headerSub.textContent = '参加管理アプリ';
-      // 開催回数をインラインに更新
+      headerSub.textContent = '〜参加アプリ〜';
       const numEl2 = document.getElementById('host-count-num');
       if (numEl2) numEl2.textContent = getHostTotal();
       document.getElementById('tab-archive').style.display = 'none';
     }
 
-    // 表示を更新
     renderMembers();
     renderPurchasePage();
   }
@@ -918,7 +931,6 @@
         ticketSection = `<div class="no-ticket-msg">5回券未購入 ― 「5回券購入」タブで購入してください</div>`;
       }
 
-      // 5回完了エリア（管理者のみ）
       let completionArea = '';
       if (isAdmin && m.hasTicket5 && allDone && !m.nextTicketPurchased) {
         completionArea = `
@@ -931,7 +943,6 @@
           </div>`;
       }
 
-      // ボタン行：管理者か否かで切り替え
       let btnRow = '';
       if (isAdmin) {
         btnRow = `
@@ -1433,7 +1444,6 @@
       const starEvt   = isAutoFav ? '' : `onclick="toggleFavorite('${m.id}')"`;
       const starTitle = isAutoFav ? '参加中（自動★）' : (starred ? 'お気に入り解除' : 'お気に入りに追加');
       const total      = getMemberTotal(m);
-      const ticketBuys = Math.ceil(total / 5);
 
       let statsArea;
       if (editingLegacyId === m.id && isAdmin) {
@@ -1803,7 +1813,6 @@
     renderArchive();
     updateArchiveBadge();
     renderHistoryMemberBtns();
-    // 未ログイン時の開催回数を初期表示
     const numEl = document.getElementById('host-count-num');
     if (numEl) numEl.textContent = getHostTotal();
   })();
